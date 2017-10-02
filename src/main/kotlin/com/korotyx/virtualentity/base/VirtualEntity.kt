@@ -1,8 +1,8 @@
-@file:JvmName("virtualentity")
+@file:JvmName("VirtualEntity")
 package com.korotyx.virtualentity.base
 
 import com.google.gson.*
-import com.korotyx.virtualentity.VirtualEntityUtil
+import com.korotyx.virtualentity.util.VirtualEntityUtil
 import com.korotyx.virtualentity.system.GenericIdentity
 import com.korotyx.virtualentity.system.TypeRegister
 import java.lang.reflect.Method

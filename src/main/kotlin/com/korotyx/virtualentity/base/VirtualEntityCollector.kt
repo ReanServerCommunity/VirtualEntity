@@ -1,3 +1,4 @@
+@file:JvmName("VirtualEntityCollector")
 package com.korotyx.virtualentity.base
 
 import com.korotyx.virtualentity.system.GenericIdentity

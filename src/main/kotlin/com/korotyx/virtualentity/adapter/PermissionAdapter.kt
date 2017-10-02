@@ -2,9 +2,9 @@ package com.korotyx.virtualentity.adapter
 
 import com.google.gson.*
 
-import com.korotyx.virtualentity.command.Permission
+import com.korotyx.virtualentity.command.misc.Permission
 import com.korotyx.virtualentity.base.AdapterBase
-import com.korotyx.virtualentity.implemention.command.PermissionImpl
+import com.korotyx.virtualentity.plugin.RebukkitPlugin
 import com.korotyx.virtualentity.system.TypeRegister
 
 import java.lang.reflect.Type
@@ -15,7 +15,7 @@ class PermissionAdapter : AdapterBase<Permission>(), AdapterListener
     override fun deserialize(p0: JsonElement?, p1: Type?, p2: JsonDeserializationContext?): Permission
     {
         val jsonObject = p0 as JsonObject
-        val permission : Permission = PermissionImpl()
+        val permission : Permission = RebukkitPlugin.loadPermission("rebukkitexample.changed", true)
         permission.setBody(jsonObject["base"].asString)
         permission.setValue(jsonObject["value"].asString)
         return permission

@@ -1,29 +1,15 @@
 package com.korotyx.virtualentity
 
-import com.korotyx.virtualentity.command.Permission
-import com.korotyx.virtualentity.implemention.command.PermissionImpl
+import com.korotyx.virtualentity.command.misc.Permission
 import com.korotyx.virtualentity.base.VirtualEntity
+import com.korotyx.virtualentity.plugin.RebukkitPlugin
 
-class ExampleEntity : VirtualEntity<ExampleEntity>
+class ExampleEntity(uniqueId: String) : VirtualEntity<ExampleEntity>(uniqueId)
 {
     companion object
     {
         fun get(obj : Any) : ExampleEntity? = ExampleEntityCollector.getInstance().getEntity(obj)
     }
-
-    private fun init()
-    {
-        val perm : Permission = PermissionImpl()
-        perm.setBody("examplevalue")
-        perm.setValue("child")
-        this.value7 = perm
-    }
-
-    constructor(uniqueId : String) : super(uniqueId)
-    {
-        init()
-    }
-
 
     private var value0 : Int = 1
 
@@ -39,7 +25,13 @@ class ExampleEntity : VirtualEntity<ExampleEntity>
 
     private var value6 : Float = 4.56f
 
-    private var value7 : Permission = PermissionImpl()
+    private var value7 : Permission
 
     fun getValue7() : Permission = value7
+
+    init
+    {
+        val perm : Permission = RebukkitPlugin.loadPermission("rebukkitexample.root", true)
+        this.value7 = perm
+    }
 }

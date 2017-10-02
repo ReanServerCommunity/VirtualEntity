@@ -11,10 +11,18 @@ import java.lang.reflect.ParameterizedType
  */
 open class GenericIdentity<P>
 {
+    // This is a generic object of this class. It contains information about the superclass.
     @Suppress("UNCHECKED_CAST")
     @Transient
     private val genericBaseType : Class<P> = (javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<P>
 
+
+    /**
+     * Gets an instance of this generic. It cans get the information of the upper command class.
+     * @return The generic type
+     * @exception InstantiationException Failed to create instance object
+     * @exception IllegalAccessException Approaching an unacceptable area
+     */
     fun getGenericBaseInstance() : P?
     {
         var instance : P? = null
@@ -33,5 +41,9 @@ open class GenericIdentity<P>
         return instance
     }
 
+    /**
+     * Gets the generic type of the command.
+     * @return The generic class type
+     */
     fun getGenericBaseType() : Class<P> = genericBaseType
 }

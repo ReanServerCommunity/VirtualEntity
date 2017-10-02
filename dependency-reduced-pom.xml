@@ -30,8 +30,13 @@
           </execution>
         </executions>
         <configuration>
-          <languageVersion>1.1</languageVersion>
+          <languageVersion>1.2</languageVersion>
           <jvmTarget>1.8</jvmTarget>
+          <sourceDirs>
+            <source>src/main/java</source>
+            <source>src/main/kotlin</source>
+            <source>src/main/resources</source>
+          </sourceDirs>
         </configuration>
       </plugin>
       <plugin>

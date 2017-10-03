@@ -1,5 +1,7 @@
 package com.korotyx.virtualentity.command.misc
 
+import com.korotyx.virtualentity.security.DefaultOperator
+import com.korotyx.virtualentity.system.MessageProvider
 import org.bukkit.command.CommandSender
 
 /**
@@ -7,19 +9,15 @@ import org.bukkit.command.CommandSender
  * @author Kunonx
  * @since 1.0.0-SNAPSHOT
  */
-interface Permission
+interface Permission : DefaultOperator, MessageProvider
 {
-    fun getBody() : String?
-
     fun getValue() : String?
 
-    fun setBody(base : String)
+    fun setValue(value : String)
 
-    fun setValue(child : String)
+    fun getPermission() : String
 
-    fun isDefaultOp(): Boolean
+    fun getPermission(target : CommandSender?) : String
 
-    fun getPermissionName() : String
-
-    fun getPermissionName(target : CommandSender?) : String
+    fun setMessage(message: String)
 }

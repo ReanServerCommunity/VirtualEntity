@@ -16,7 +16,6 @@ open class GenericIdentity<P>
     @Transient
     private val genericBaseType : Class<P> = (javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<P>
 
-
     /**
      * Gets an instance of this generic. It cans get the information of the upper command class.
      * @return The generic type

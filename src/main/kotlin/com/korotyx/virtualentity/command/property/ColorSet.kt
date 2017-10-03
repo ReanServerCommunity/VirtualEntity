@@ -1,4 +1,4 @@
-package com.korotyx.virtualentity.command
+package com.korotyx.virtualentity.command.property
 
 object ColorSet
 {

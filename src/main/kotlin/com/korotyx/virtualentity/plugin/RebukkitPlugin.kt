@@ -1,5 +1,7 @@
 package com.korotyx.virtualentity.plugin
 
+import com.korotyx.virtualentity.command.misc.Parameter
+import com.korotyx.virtualentity.command.misc.ParameterType
 import com.korotyx.virtualentity.command.misc.Permission
 import com.korotyx.virtualentity.implemention.command.PermissionImpl
 
@@ -16,6 +18,11 @@ abstract class RebukkitPlugin : JavaPlugin()
                     java.getConstructor(String::class.java, Boolean::class.java)
             con.isAccessible = true
             return con.newInstance(name, defaultOP)
+        }
+
+        fun loadParameter(s: String, optional: ParameterType): Parameter
+        {
+            TODO("Up to date")
         }
     }
 

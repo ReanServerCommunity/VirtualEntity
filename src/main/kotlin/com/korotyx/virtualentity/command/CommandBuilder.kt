@@ -1,10 +1,11 @@
 package com.korotyx.virtualentity.command
 
+import com.korotyx.virtualentity.base.VirtualEntity
 import com.korotyx.virtualentity.command.misc.CommandJsonMessage
 import com.korotyx.virtualentity.command.misc.Parameter
 import com.korotyx.virtualentity.command.misc.Permission
 import com.korotyx.virtualentity.plugin.RebukkitPlugin
-import com.korotyx.virtualentity.system.GenericIdentity
+import com.korotyx.virtualentity.system.UserConsoleMode
 import com.korotyx.virtualentity.util.StringUtil
 
 import org.bukkit.command.CommandSender
@@ -12,9 +13,6 @@ import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 
 import java.util.*
-
-typealias CommandType =  CommandBuilder<*>
-typealias COMMAND_PRIORITY_DWORD = Int
 /**
  * CommandBuilder is an abstraction command skeleton that allows you to register a command
  * directly to Bukkit without any setting. This is an extended of original function, which
@@ -27,18 +25,34 @@ typealias COMMAND_PRIORITY_DWORD = Int
  * http://www.angelikalanger.com/GenericsFAQ/FAQSections/ProgrammingIdioms.html#FAQ206
  * @author Korotyx
  * @version 1.0.0
- * @param T The class type that inherits from CommandBuilder
  */
-open abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : String) : GenericIdentity<T>()
+typealias CommandType =  CommandBuilder<*>
+typealias COMMAND_PRIORITY_DWORD = Int
+abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : String) : VirtualEntity<CommandBuilder<T>>(), CommandExecutable, UserConsoleMode
 {
     companion object
     {
+        // When you output the help page to the player, you decide how many commands to send.
+        // On console, It's automatically assigned the maximum number of commands.
+        // The recommended value's 5 ~ 7, the rest is not recommended.
         var MAX_PAGE_SIZE : Short = 7
+
+        // This is the message to be printed at the top when printing the help page.
         var HEADER_MESSAGE : String = "&e====&f [&b Help commands for &e\"{0}\" &a1/{1} &bpage(s) &f] &e===="
-        var COMMAND_OUTPUT_FORMAT : String = "/{0} {1}: {2}"
+
+        var COMMAND_OUTPUT_FORMAT : String = "/{0} {1}"
     }
 
-    protected fun setCommand(maincommand : String) { this.mainCommand = mainCommand }
+    /**
+     * Set the command value. However, Changing the value in the middle is not recommended.
+     * @param command The command
+     */
+    protected fun setCommand(command : String) { this.mainCommand = command }
+
+    /**
+     * Get the command value.
+     * @return the command value
+     */
     fun getCommand() : String = mainCommand
 
     //
@@ -48,10 +62,18 @@ open abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainComman
 
     //
     private var commandDescription : MutableList<String> = ArrayList()
+
+    /**
+     *
+     */
     fun getCommandDescription() : MutableList<String> = commandDescription
 
     //
     private var aliasCommand : MutableList<String> = ArrayList()
+
+    /**
+     *
+     */
     fun getAliasCommand() : MutableList<String> = aliasCommand
     fun hasAliasCommand(find : String? = null) : Boolean
     {
@@ -60,23 +82,27 @@ open abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainComman
             return aliasCommand.contains(find.toLowerCase())
         }
     }
+    fun addAliasCommand(vararg s : String) = s.filterNot { it.split(" ").isNotEmpty() }.forEach { aliasCommand.add(it) }
+    fun setAliasCommand(s : MutableList<String>) { aliasCommand = s }
 
     /**
      * Decide if you want to allow the player to use this command.
      * This can also affect child commands.
      */
     private var consoleMode : Boolean = true
-    fun setConsoleMode(enable : Boolean) { this.consoleMode = enable }
+    override fun setConsoleMode(enable : Boolean) { this.consoleMode = enable }
 
     /**
      * Decide if you want to allow the player to use this command.
      * This can also affect child commands.
      */
     private var userMode : Boolean = true
-    fun setUserMode(enable : Boolean) { this.userMode = enable}
+    override fun setUserMode(enable : Boolean) { this.userMode = enable}
 
     private var parameter : Parameter? = null
+    fun setParameter(p : Parameter) { parameter = p }
     fun hasParameter() : Boolean = this.parameter != null
+    fun getParameterPermission() : String? = this.getParameterPermission(0)
     fun getParameterPermission(index : Int = 0) : String?
     {
         val func : (Parameter, Int) -> String? = { p, i -> p.getChild(i)!!.getPermission() }
@@ -89,12 +115,9 @@ open abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainComman
         }
     }
 
-
     // The parent class of this class.
     // This connects the commands of that class to the parent class in tree form.
     private var parentCommand : CommandType? = null
-
-
 
     /**
      * @return
@@ -109,7 +132,7 @@ open abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainComman
     /**
      * @return
      */
-    fun isRoot(): Boolean = this.parentCommand == null
+    private fun isRoot(): Boolean = this.parentCommand == null
 
 
 
@@ -371,7 +394,7 @@ open abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainComman
                     var param : Parameter = command.parameter!!
                     while(param.hasChild())
                     {
-                        relativeCommand = "$relativeCommand ${param.getParamValue(sender)}"
+                        relativeCommand = StringUtil.replaceValue(COMMAND_OUTPUT_FORMAT, relativeCommand, param.getParamValue(sender))
                         param = param.getChild()!!
                     }
                 }
@@ -389,4 +412,6 @@ open abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainComman
             // No provided help page.
         }
     }
+
+    override fun perform(sender: CommandSender, argc: Int, args: List<String>?) : Boolean = true
 }

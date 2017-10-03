@@ -15,6 +15,8 @@ interface Permission : DefaultOperator, MessageProvider
 
     fun setValue(value : String)
 
+    fun setCustomPermission(perm: String)
+
     fun getPermission() : String
 
     fun getPermission(target : CommandSender?) : String

@@ -13,6 +13,9 @@ import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 
 import java.util.*
+
+typealias CommandType =  CommandBuilder<*>
+typealias COMMAND_PRIORITY_DWORD = Int
 /**
  * CommandBuilder is an abstraction command skeleton that allows you to register a command
  * directly to Bukkit without any setting. This is an extended of original function, which
@@ -25,9 +28,8 @@ import java.util.*
  * http://www.angelikalanger.com/GenericsFAQ/FAQSections/ProgrammingIdioms.html#FAQ206
  * @author Korotyx
  * @version 1.0.0
+ * @param T
  */
-typealias CommandType =  CommandBuilder<*>
-typealias COMMAND_PRIORITY_DWORD = Int
 abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : String) : VirtualEntity<CommandBuilder<T>>(), CommandExecutable, UserConsoleMode
 {
     companion object
@@ -57,7 +59,15 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
 
     //
     private lateinit var handle : RebukkitPlugin
+
+    /**
+     *
+     */
     protected fun setHandlePlugin(plugin : RebukkitPlugin) { handle = plugin }
+
+    /**
+     *
+     */
     fun getHandlePlugin() : RebukkitPlugin? = handle
 
     //
@@ -75,6 +85,10 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
      *
      */
     fun getAliasCommand() : MutableList<String> = aliasCommand
+
+    /**
+     *
+     */
     fun hasAliasCommand(find : String? = null) : Boolean
     {
         find ?: return aliasCommand.isEmpty()
@@ -82,7 +96,15 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
             return aliasCommand.contains(find.toLowerCase())
         }
     }
+
+    /**
+     *
+     */
     fun addAliasCommand(vararg s : String) = s.filterNot { it.split(" ").isNotEmpty() }.forEach { aliasCommand.add(it) }
+
+    /**
+     *
+     */
     fun setAliasCommand(s : MutableList<String>) { aliasCommand = s }
 
     /**
@@ -90,15 +112,22 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
      * This can also affect child commands.
      */
     private var consoleMode : Boolean = true
-    override fun setConsoleMode(enable : Boolean) { this.consoleMode = enable }
 
     /**
-     * Decide if you want to allow the player to use this command.
-     * This can also affect child commands.
+     *
      */
+    override fun setConsoleMode(enable : Boolean) { this.consoleMode = enable }
+
+    //Decide if you want to allow the player to use this command.
+    //This can also affect child commands.
     private var userMode : Boolean = true
+
+    /**
+     *
+     */
     override fun setUserMode(enable : Boolean) { this.userMode = enable}
 
+    //
     private var parameter : Parameter? = null
     fun setParameter(p : Parameter) { parameter = p }
     fun hasParameter() : Boolean = this.parameter != null
@@ -107,10 +136,9 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
     {
         val func : (Parameter, Int) -> String? = { p, i -> p.getChild(i)!!.getPermission() }
         var permissionValue : String? = this.getPermissionValue()
-        permissionValue ?: return func(this.parameter!!, index)
+        permissionvalue ?: return func(this.parameter!!, index)
         permissionValue.let {
-            for(k in 0..index)
-                permissionValue = "$permissionValue.${this.parameter!!.getChild(k)!!.getPermission()}"
+            for(k in 0..index) permissionValue = "$permissionValue.${this.parameter!!.getChild(k)!!.getPermission()}"
             return permissionValue
         }
     }
@@ -133,8 +161,6 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
      * @return
      */
     private fun isRoot(): Boolean = this.parentCommand == null
-
-
 
     // The Permission for this command.
     // The Permission value of the child class is used in conjunction with the parent
@@ -177,7 +203,7 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
      * That is, the child information changes automatically according to the parent value and
      * need to enter <code>/ps run</code> to use the ChildCommand's command.<br>
      * @param perm The permission of the CommandBuilder
-     * @see Permission.getPermissionName
+     * @see Permission.getPermission
      */
     protected fun setPermission(perm : Permission) { this.permission = permission }
 

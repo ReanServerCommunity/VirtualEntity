@@ -15,18 +15,19 @@ class PermissionAdapter : AdapterBase<Permission>(), AdapterListener
     override fun deserialize(p0: JsonElement?, p1: Type?, p2: JsonDeserializationContext?): Permission
     {
         val jsonObject = p0 as JsonObject
-        val permission : Permission = RebukkitPlugin.loadPermission("rebukkitexample.changed", true)
-        permission.setBody(jsonObject["base"].asString)
-        permission.setValue(jsonObject["value"].asString)
+        val permission : Permission = RebukkitPlugin.loadPermission(jsonObject["value"].asString, jsonObject["defaultOp"].asBoolean)
+        permission.setMessage(jsonObject["message"].asString)
+        permission.setPermission(jsonObject["permission"].asString)
         return permission
     }
 
     override fun serialize(p0: Permission?, p1: Type?, p2: JsonSerializationContext?): JsonElement
     {
         return JsonObject().apply {
-            addProperty("base", p0!!.getBody())
-            addProperty("value", p0.getValue())
+            addProperty("value", p0!!.getValue())
             addProperty("defaultOp", p0.isDefaultOp())
+            addProperty("message", p0.getMessage())
+            addProperty("permission", p0.getPermission())
         }
     }
 }

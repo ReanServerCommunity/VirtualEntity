@@ -43,13 +43,16 @@ internal class Permission0(private var name: String, private var defaultOP: Bool
     override fun setMessage(message : String) { this.permissionMessage = message }
     override fun getMessage() : String? = this.permissionMessage
 
+    private var customPerm : String? = name
+    override fun setCustomPermission(perm: String) { customPerm = perm }
+
     override fun getPermission() : String = this.getPermission(null)
     override fun getPermission(target : CommandSender?) : String
     {
-        target ?: return this.name
+        target ?: if(customPerm != null && customPerm.equals(name, true)) name else customPerm
         var colorSet: String?
         target.let {
-            colorSet = if(this.isDefaultOp() || this.hasPermission(target)) ColorSet.ALLOWED_PERM_COLORSET
+            colorSet = if(this.isDefaultOp() || this.hasPermission(target!!)) ColorSet.ALLOWED_PERM_COLORSET
                        else ColorSet.DEINED_PERM_COLORSET
 
             val value : String = if(this.isDisconnected()) "$this.name.$ColorSet.DEFAULT_CHILD_PERMISSION" else this.name

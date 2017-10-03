@@ -22,4 +22,5 @@ interface Parameter : UserConsoleMode
 
     fun getParam(): String
     fun serParam(param: String)
+    fun length(): Int
 }

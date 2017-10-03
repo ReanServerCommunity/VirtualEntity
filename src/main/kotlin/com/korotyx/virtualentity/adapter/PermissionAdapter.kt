@@ -17,7 +17,7 @@ class PermissionAdapter : AdapterBase<Permission>(), AdapterListener
         val jsonObject = p0 as JsonObject
         val permission : Permission = RebukkitPlugin.loadPermission(jsonObject["value"].asString, jsonObject["defaultOp"].asBoolean)
         permission.setMessage(jsonObject["message"].asString)
-        permission.setPermission(jsonObject["permission"].asString)
+        permission.setValue(jsonObject["permission"].asString)
         return permission
     }
 
@@ -27,7 +27,7 @@ class PermissionAdapter : AdapterBase<Permission>(), AdapterListener
             addProperty("value", p0!!.getValue())
             addProperty("defaultOp", p0.isDefaultOp())
             addProperty("message", p0.getMessage())
-            addProperty("permission", p0.getPermission())
+            addProperty("permission", p0.getValue())
         }
     }
 }

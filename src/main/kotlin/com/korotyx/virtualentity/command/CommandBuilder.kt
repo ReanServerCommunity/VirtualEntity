@@ -1,10 +1,13 @@
 package com.korotyx.virtualentity.command
 
-import com.korotyx.virtualentity.base.VirtualEntity
 import com.korotyx.virtualentity.command.misc.CommandJsonMessage
 import com.korotyx.virtualentity.command.misc.Parameter
+import com.korotyx.virtualentity.command.misc.ParameterType
 import com.korotyx.virtualentity.command.misc.Permission
+import com.korotyx.virtualentity.command.property.ColorSet
+import com.korotyx.virtualentity.command.property.CommandProperty
 import com.korotyx.virtualentity.plugin.RebukkitPlugin
+import com.korotyx.virtualentity.system.GenericIdentity
 import com.korotyx.virtualentity.system.UserConsoleMode
 import com.korotyx.virtualentity.util.StringUtil
 
@@ -13,8 +16,9 @@ import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 
 import java.util.*
+import kotlin.collections.ArrayList
 
-typealias CommandType =  CommandBuilder<*>
+typealias CommandType            = CommandBuilder<*>
 typealias COMMAND_PRIORITY_DWORD = Int
 /**
  * CommandBuilder is an abstraction command skeleton that allows you to register a command
@@ -30,14 +34,15 @@ typealias COMMAND_PRIORITY_DWORD = Int
  * @version 1.0.0
  * @param T
  */
-abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : String) : VirtualEntity<CommandBuilder<T>>(), CommandExecutable, UserConsoleMode
+abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : String) : GenericIdentity<T>(),
+        CommandExecutable, UserConsoleMode
 {
     companion object
     {
         // When you output the help page to the player, you decide how many commands to send.
         // On console, It's automatically assigned the maximum number of commands.
-        // The recommended value's 5 ~ 7, the rest is not recommended.
-        var MAX_PAGE_SIZE : Short = 7
+        // The recommended value's 5 ~ 8, Other's not recommended.
+        var MAX_PAGE_SIZE : Byte = 7
 
         // This is the message to be printed at the top when printing the help page.
         var HEADER_MESSAGE : String = "&e====&f [&b Help commands for &e\"{0}\" &a1/{1} &bpage(s) &f] &e===="
@@ -72,6 +77,8 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
 
     //
     private var commandDescription : MutableList<String> = ArrayList()
+    fun addCommandDescription(s : String) { commandDescription.add(s) }
+    fun setCommandDescription(s : MutableList<String>) { this.commandDescription = s }
 
     /**
      *
@@ -96,6 +103,8 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
             return aliasCommand.contains(find.toLowerCase())
         }
     }
+
+    fun isAlias(find : String) : Boolean = aliasCommand.contains(find)
 
     /**
      *
@@ -131,14 +140,19 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
     private var parameter : Parameter? = null
     fun setParameter(p : Parameter) { parameter = p }
     fun hasParameter() : Boolean = this.parameter != null
-    fun getParameterPermission() : String? = this.getParameterPermission(0)
-    fun getParameterPermission(index : Int = 0) : String?
+    fun getParamPermission() : String? = this.getRelativeParamPermission(0)
+    fun getRelativeParamPermission(toIndex : Int = 0) : String?
     {
         val func : (Parameter, Int) -> String? = { p, i -> p.getChild(i)!!.getPermission() }
-        var permissionValue : String? = this.getPermissionValue()
-        permissionvalue ?: return func(this.parameter!!, index)
+        var permissionValue : String? = this.getRelativePermission()
+        permissionValue ?: return func(this.parameter!!, toIndex)
         permissionValue.let {
-            for(k in 0..index) permissionValue = "$permissionValue.${this.parameter!!.getChild(k)!!.getPermission()}"
+            var k = 0
+            do
+            {
+                permissionValue = "$permissionValue.${this.parameter!!.getChild(k)!!.getPermission()}"
+                k++
+            }while (k < toIndex)
             return permissionValue
         }
     }
@@ -205,7 +219,7 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
      * @param perm The permission of the CommandBuilder
      * @see Permission.getPermission
      */
-    protected fun setPermission(perm : Permission) { this.permission = permission }
+    protected fun setPermission(perm : Permission) { this.permission = perm }
 
     /**
      * Determines whether to enable parent inheritance mode.
@@ -227,51 +241,56 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
     fun hasPermission() : Boolean = this.permission != null
 
     /**
-     * Get the permission value.
+     * Get the Permission value relatively. Also, This method does not return a string containing the color code.
      * This method created for Java compatibility.
      * @return the string of permission value
      */
-    fun getPermissionValue() : String? = getPermissionValue(null)
+    fun getRelativePermission() : String? = getRelativePermissionColored(null)
 
     /**
-     * Get the Permission value.
+     * Get the Permission value relatively.
      * This is affected by the parent Permission value and it can colorize the string according to the target.
      * @param colorTarget The object upon which to retrieve the Permission value
      * @return the string of permission value
      */
-    fun getPermissionValue(colorTarget : CommandSender? = null) : String?
+    private fun getRelativePermissionColored(colorTarget : CommandSender? = null) : String?
     {
         this.permission ?: return null
-        this.parentCommand ?: return this.permission!!.getPermissionName(colorTarget)
+        this.parentCommand ?: return this.permission!!.getPermissionColored(colorTarget)
 
+        // Get information about parent command.
         var parent : CommandType? = this.parentCommand
-        var perm : String = this.permission!!.getPermissionName()
 
+        // This permission value.
+        var perm : String = this.permission!!.getPermissionColored(colorTarget)
         if(! inheritedParentMode) return perm
-
         while(parent != null)
         {
-            perm = "${parent.getPermission()!!.getPermissionName(null)}.$perm"
-            parent = parent.parentCommand!!
+            perm = "${parent.getPermission()!!.getPermissionColored(colorTarget)}.$perm"
+            parent = parent.parentCommand
         }
-        return if(colorTarget == null) perm else {
-            RebukkitPlugin.loadPermission(perm, this.permission!!.isDefaultOp()).getPermissionName(colorTarget)
-        }
+        return perm
     }
 
     /**
-     * for java method. <br>
-     * Unfortunately, the Java grammar does not support initial argument values.
-     * If you want to program using Java, see that method.
+     * This is a command for help page.
+     * It prints all the sub-commands available in that class.
+     * If there is no value in Main Command, return value is null.
+     * The output format is as follows: <br>
+     * <code><b><ROOT_MAIN_COMMAND> <SUB_MAIN_COMMAND> <SUB_SUB_MAIN_COMMAND> ..... <CURRENT_ALL_COMMAND></b></code>
+     * This method created for Java compatibility.
      */
-    protected fun getRelativeCommand(target : CommandSender? = null) : String = getRelativeCommand(this, null, false, target)
+    protected fun getRelativeCommand(target : CommandSender? = null) : String = getRelativeCommandColored(this, null, false, target)
 
     /**
-     * for java method. <br>
-     * Unfortunately, the Java grammar does not support initial argument values.
-     * If you want to program using Java, see that method.
+     * This is a command for help page.
+     * It prints all the sub-commands available in that class.
+     * If there is no value in Main Command, return value is null.
+     * The output format is as follows: <br>
+     * <code><b><ROOT_COMMAND> <SUB_MAIN_COMMAND> <SUB_SUB_MAIN_COMMAND> ..... <CURRENT_ALL_COMMAND></b></code>
+     * This method created for Java compatibility.
      */
-    protected fun getRelativeCommand(isMain : Boolean, target : CommandSender? = null) : String = getRelativeCommand(this, null, isMain, target)
+    private fun getRelativeCommand(isMain : Boolean, target : CommandSender? = null) : String = getRelativeCommandColored(this, null, isMain, target)
 
     /**
      * This is a command for help page.
@@ -284,28 +303,30 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
      * @param isMain
      * @param target If this argument is not null, It can colorize the command based on this target
      */
-    protected fun getRelativeCommand(command : CommandType?, label : String? = null, isMain : Boolean = false, target : CommandSender? = null) : String
+    private fun getRelativeCommandColored(command : CommandType?, label : String? = null, isMain : Boolean = false, target : CommandSender? = null) : String
     {
         var subLabel: String? = label
         command ?: throw RuntimeException("command cannot be null")
+
         if(command.isRoot())
-            subLabel = if(label == null) { command.getAllCommands() } else "${command.getAllCommands()} $label"
+            subLabel = if(label == null) { command.getAllCommands(target) } else "${command.getAllCommands(target)} $label"
         else
             if(command.hasChildCommand())
             {
-                subLabel = if(isMain) if(label == null) command.getAllCommands() else "${command.getAllCommands()} $label"
+                subLabel = if(isMain) if(label == null) command.getAllCommands(target) else "${command.getAllCommands(target)} $label"
                 else if(label == null) command.mainCommand else "${command.mainCommand} $label"
             }
-        return if(command.isRoot()) subLabel!! else this.getRelativeCommand(command.parentCommand, subLabel, false, target)
+        return if(command.isRoot()) subLabel!! else this.getRelativeCommandColored(command.parentCommand, subLabel, false, target)
     }
 
     /**
      * This is a command for help page.
      * Returns all commands in the class with commas.
      * The output format is as follows: <br>
-     * <MAIN_COMMAND>,<ALIAS_COMMAND>,<ALIAS_COMMAND2>, ... ,<ALIAS_COMMAND>
+     *
+     * <ALIAS_COMMAND>,<ALIAS_COMMAND2>, ... ,<ALIAS_COMMAND>
      */
-    protected fun getAllCommands(target: CommandSender? = null): String
+    private fun getAllCommands(target: CommandSender? = null): String
     {
         var s : String = ""
         val iter : Iterator<String> = this.aliasCommand.iterator()
@@ -313,9 +334,19 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
         {
             val s2 = iter.next()
             s += s2
-            if(iter.hasNext()) s += ","
+            if(iter.hasNext()) s += commandSentenceSymbol
         }
-        return s
+        return if(target == null) s
+        else { return if(this.isAllowedCommand(target)) ColorSet.ALLOWED_PERM_COLORSET + s else ColorSet.DEINED_PERM_COLORSET + s }
+    }
+
+    private var commandSentenceSymbol : String = ","
+
+    fun isAllowedCommand(target : CommandSender) : Boolean
+    {
+        val perm : String? = this.getRelativePermission()
+        perm ?: return true
+        return target.hasPermission(perm)
     }
 
     // Saves subclasses that operate on this command.
@@ -326,22 +357,25 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
         if (this.hasChildCommand()) return null
         return this.childCommand.firstOrNull { it.mainCommand.equals(cmd, true) || it.hasAliasCommand(cmd) }
     }
-
+    fun addChildCommand(ch : CommandBuilder<*>)
+    {
+        ch.setParent(this)
+        childCommand.add(ch)
+    }
     fun getChildCommands() : MutableList<CommandType> = childCommand
 
     protected var externalCommand : MutableList<CommandType> = ArrayList()
     fun addExternalCommand(command: CommandType) { this.externalCommand.add(command)}
     fun getExternalCommands() : MutableList<CommandType> = externalCommand
 
-
-    enum class CommandPriority(val value : COMMAND_PRIORITY_DWORD)
+    object CommandPriority
     {
-        ASCENDING(1),
-        DESCENDING(3),
-        RANDOM(4)
+        const val ASCENDING  : COMMAND_PRIORITY_DWORD = 0x01
+        const val DESCENDING : COMMAND_PRIORITY_DWORD = 0x03
+        const val RANDOM     : COMMAND_PRIORITY_DWORD = 0x04
     }
 
-    private var commandPriorityValue : COMMAND_PRIORITY_DWORD = 1
+    private var commandPriorityValue : COMMAND_PRIORITY_DWORD = CommandPriority.ASCENDING
 
     /**
      *
@@ -365,7 +399,7 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
         }
     }
 
-    protected fun sendHelp(sender : CommandSender)
+    fun sendDocumentionPage(sender : CommandSender)
     {
         // Collect commands that will appear on the help page.
         // It also takes an external command that is not related to this command.
@@ -394,7 +428,7 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
                 var param : Parameter = this.parameter!!
                 while(param.hasChild())
                 {
-                    mainCommand = "$mainCommand ${param.getParamValue(sender)}"
+                    mainCommand = "$mainCommand ${param.getParameterLabel()}"
                     param = param.getChild()!!
                 }
             }
@@ -420,7 +454,7 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
                     var param : Parameter = command.parameter!!
                     while(param.hasChild())
                     {
-                        relativeCommand = StringUtil.replaceValue(COMMAND_OUTPUT_FORMAT, relativeCommand, param.getParamValue(sender))
+                        relativeCommand = StringUtil.replaceValue(COMMAND_OUTPUT_FORMAT, relativeCommand, param.getParameterLabel())
                         param = param.getChild()!!
                     }
                 }
@@ -437,6 +471,124 @@ abstract class CommandBuilder<T : CommandBuilder<T>>(private var mainCommand : S
         {
             // No provided help page.
         }
+    }
+
+    fun sendDocumentionPage(sender : CommandSender, page : Int = 0)
+    {
+
+    }
+
+    fun execute(sender : CommandSender, args : MutableList<String>) : Boolean
+    {
+        if(args.size == 0)
+        {
+            if(this.hasChildCommand())
+            {
+                this.sendDocumentionPage(sender)
+                return true
+            }
+            else
+            {
+                if(this.hasParameter())
+                {
+                    if(this.parameter!!.getParameterType() == ParameterType.REQUIREMENT)
+                    {
+                        //msg.send(sender, "&cThe param \"${this.parameter!!.getParam()}\" is required value!")
+                        return false
+                    }
+
+                    if(! this.isAllowedCommand(sender))
+                    {
+                        //msg.send(sender, "${this.permission!!.getMessage()} (${this.getRelativePermission()}")
+                        return false
+                    }
+                    return this.perform(sender, args.size, args)
+                }
+            }
+        }
+        else
+        {
+            if(args[0].equals(CommandProperty.DEFAULT_CHILD_PERMISSION, true) || args[0] == "?")
+            {
+                if(this.hasChildCommand() && CommandExecutable::class.java.isAssignableFrom(this.getGenericBaseType()))
+                {
+                    if(args.size >= 2 && StringUtil.isNumber(args[1]))
+                    {
+                        this.sendDocumentionPage(sender, Integer.parseInt(args[1]))
+                    }
+                    this.sendDocumentionPage(sender)
+                    return true
+                }
+                if(! sender.hasPermission(this.getRelativePermission()))
+                {
+                    //msg.send(sender, "${this.permission!!.getMessage()} (${this.getRelativePermission()}")
+                    return false
+                }
+                this.perform(sender, args.size, args)
+            }
+            else
+            {
+                if(! this.hasChildCommand() && this.hasParameter())
+                {
+                    if(this.parameter!!.length() >= 1)
+                    {
+                        if(this.parameter!!.length() < args.size) {
+                            var s = this.getRelativeCommand()
+                            var p = this.parameter
+                            while (p != null) {
+                                s = s + " " + p.getParameterLabel()
+                                p = p.getChild()
+                            }
+                            //Msg.sendTxt(sender, "&cArgument limit exceeded:&f \"{0}\"", args.get(this.parameter.length()));
+                            //Msg.sendTxt(sender, "&6Use Command:&f /{0}", s);
+                            return false
+                        }
+
+                        // Check the command sender entered requirement parameter value.
+                        var paramMax = 0
+                        var p = this.parameter
+                        while(p != null)
+                        {
+                            if(p.getParameterType() == ParameterType.REQUIREMENT &&
+                                    args.size <= paramMax) {
+                                //Msg.sendTxt(sender, "&cThe param \"" + p.getParam() + "&c\" is required value!");
+                                return false
+                            }
+                            p = p.getChild()
+                            paramMax++
+                        }
+
+                        if(! sender.hasPermission(this.getRelativePermission()))
+                        {
+                            //Msg.sendTxt(sender, "&cYou are not authorized for this command. &8{0}", this.getPermission());
+                            return false
+                        }
+                        return this.perform(sender, args.size, args)
+                    }
+                    else
+                    {
+                        // Unexpected error.
+                    }
+                    //this.getActivePlugin().getLangConfiguration().sendMessage(sender, "System.UNKNOWN_COMMAND", "&b/" +  this.getRelativeCommand(true) + " ?");
+                    return false
+                }
+                else
+                {
+                    for(c in this.getChildCommands())
+                    {
+                        if(c.mainCommand.equals(args[0], true) || c.isAlias(args[0]))
+                        {
+                            var argList : MutableList<String> = ArrayList(args)
+                            argList.removeAt(0)
+                            return c.execute(sender, argList)
+                        }
+                    }
+                    //this.getActivePlugin().getLangConfiguration().sendMessage(sender, "System.UNKNOWN_COMMAND", "&e/" +  this.getRelativeCommand(true) + " ?");
+                    return false
+                }
+            }
+        }
+        return false
     }
 
     override fun perform(sender: CommandSender, argc: Int, args: List<String>?) : Boolean = true

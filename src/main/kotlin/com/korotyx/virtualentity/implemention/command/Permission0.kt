@@ -4,9 +4,15 @@ import com.korotyx.virtualentity.command.property.ColorSet
 import com.korotyx.virtualentity.command.property.CommandProperty
 import com.korotyx.virtualentity.command.misc.Permission
 import com.korotyx.virtualentity.util.StringUtil
+import net.minecraft.server.v1_12_R1.DedicatedServer
+import net.minecraft.server.v1_12_R1.EntityPlayer
+import net.minecraft.server.v1_12_R1.MinecraftServer
+import net.minecraft.server.v1_12_R1.WorldServer
+import org.bukkit.Bukkit
 
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
+import org.bukkit.craftbukkit.libs.joptsimple.OptionSet
 import org.bukkit.entity.Player
 
 /**
@@ -33,8 +39,8 @@ internal class Permission0(private var name: String, private var defaultOP: Bool
     }
     operator fun plus(str : String) : Permission = Permission0("$this.name.$str", this.defaultOP)
 
-    override fun setValue(value: String) { this.name = value}
-    override fun getValue(): String? = name
+    override fun setValue(value: String) { this.name = value }
+    override fun getValue(): String = name
 
     override fun setDefaultOp(isDefault : Boolean) { this.defaultOP = isDefault }
     override fun isDefaultOp(): Boolean = defaultOP
@@ -45,9 +51,7 @@ internal class Permission0(private var name: String, private var defaultOP: Bool
 
     private var customPerm : String? = name
     override fun setCustomPermission(perm: String) { customPerm = perm }
-
-    override fun getPermission() : String = this.getPermission(null)
-    override fun getPermission(target : CommandSender?) : String
+    override fun getPermissionColored(target : CommandSender?) : String
     {
         target ?: if(customPerm != null && customPerm.equals(name, true)) name else customPerm
         var colorSet: String?
@@ -60,7 +64,7 @@ internal class Permission0(private var name: String, private var defaultOP: Bool
         }
     }
 
-    private fun hasPermission(sender : CommandSender) : Boolean
+    private fun hasPermission(sender : CommandSender, rootPerm : String? = null) : Boolean
     {
         return when(sender)
         {

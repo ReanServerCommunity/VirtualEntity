@@ -11,15 +11,13 @@ import org.bukkit.command.CommandSender
  */
 interface Permission : DefaultOperator, MessageProvider
 {
-    fun getValue() : String?
+    fun getValue() : String
 
     fun setValue(value : String)
 
     fun setCustomPermission(perm: String)
 
-    fun getPermission() : String
-
-    fun getPermission(target : CommandSender?) : String
+    fun getPermissionColored(target : CommandSender?) : String
 
     fun setMessage(message: String)
 }

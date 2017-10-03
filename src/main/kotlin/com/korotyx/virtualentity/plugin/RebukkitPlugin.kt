@@ -3,7 +3,7 @@ package com.korotyx.virtualentity.plugin
 import com.korotyx.virtualentity.command.misc.Parameter
 import com.korotyx.virtualentity.command.misc.ParameterType
 import com.korotyx.virtualentity.command.misc.Permission
-import com.korotyx.virtualentity.implemention.command.PermissionImpl
+import com.korotyx.virtualentity.implemention.command.Permission0
 
 import org.bukkit.plugin.java.JavaPlugin
 import java.lang.reflect.Constructor
@@ -14,7 +14,7 @@ abstract class RebukkitPlugin : JavaPlugin()
     {
         fun loadPermission(name : String, defaultOP : Boolean) : Permission
         {
-            val con : Constructor<PermissionImpl> = PermissionImpl::class.
+            val con : Constructor<Permission0> = Permission0::class.
                     java.getConstructor(String::class.java, Boolean::class.java)
             con.isAccessible = true
             return con.newInstance(name, defaultOP)

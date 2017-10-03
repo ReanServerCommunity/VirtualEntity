@@ -11,6 +11,7 @@ class VirtualEntityCommand : CommandBuilder<VirtualEntityCommand>("ve")
     {
         this.addAliasCommand("virtualentity", "ventity")
         this.setParameter(RebukkitPlugin.loadParameter("args", ParameterType.OPTIONAL))
+        this.setCommandPriority(CommandPriority.ASCENDING or CommandPriority.DESCENDING)
     }
 
     override fun perform(sender: CommandSender, argc: Int, args: List<String>?): Boolean

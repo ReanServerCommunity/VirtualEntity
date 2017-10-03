@@ -15,5 +15,9 @@ object KotlinMain
 
         val generatedEntity : ExampleEntity = ExampleEntity.get("UNIQUE_ID_EXAMPLE")!!
         println("after: " + generatedEntity.serialize())
+
+        val exampleCommand : ExampleCommand = ExampleCommand()
+        exampleCommand.getChildCommands()[0].getRelativePermission()
+        exampleCommand.getChildCommands()[0].getParamPermission()
     }
 }

@@ -54,6 +54,18 @@ internal class Parameter0(private var param : String, private var type : Paramet
         else -> false
     }
 
+    override fun length() : Int
+    {
+        var i = 0
+        var p : Parameter? = this
+        while(p != null)
+        {
+            p = p.getChild()
+            i++
+        }
+        return i
+    }
+
     override fun getParameterLabel() : String = when(type)
     {
         ParameterType.REQUIREMENT -> String.format(REQUIREMENT_FORMAT, this.param)
